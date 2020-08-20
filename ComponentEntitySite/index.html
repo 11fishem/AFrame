@@ -1,0 +1,1024 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,user-scalable=no,maximum-scale=1">
+    <title>Component Entity VR</title>
+    <meta name="description" content="Component Entity is a WebVR Company">
+    <script src="js/thoragio.js"></script>
+    <script src="js/kframe.min.js"></script>
+    <script src="js/aframe-cursor-feedback_mod.js"></script>
+    <script src="js/aframe-extras-bundle.js"></script>
+    <script src="js/aframe-orbit-controls-component.js"></script>
+    <script src="font/GillSansMT-Bold.js"></script>
+    <!--
+    <script src="https://rawgit.com/chenzlabs/stats-in-vr/master/dist/aframe-stats-in-vr-component.min.js"></script>
+    -->
+
+    <style type="text/css">
+
+        @font-face {
+            font-family: "GillSans";
+            src: url("GillSansMT-Bold.woff") format('woff');
+        }
+
+        .vr-credits {
+            color: rgba(255,255,255,0.5);
+            padding: 10px;
+            background-color: rgba(0,0,0,0.5);
+            position: absolute;
+            bottom: -4px;
+            left: 34px;
+        }
+        .vr-credits a {
+            color: rgba(255,255,255,1);
+        }
+        .onboarding {
+            display: none;
+            background-color: white;
+            color: black;
+            width: 350px;
+            height: 220px;
+            margin: auto;
+            position: absolute;
+            left:0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: 40px;
+            border: 20px solid rgba(0,0,0,0.5);
+            padding: 20px;
+            font-family: 'Verdana';
+            font-size: 14px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .onboarding .dismiss {
+            color: green;
+            font-weight: bolder;
+        }
+        .onboarding span {
+            font-size: 130%;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+
+        function loadWatch(info) {
+            console.log('--loadWatch----------');
+            console.log(info);
+            console.log('---------------------');
+        }
+        loadWatch('head script');
+
+    </script>
+
+</head>
+
+<body>
+    <script type="text/javascript">
+        loadWatch('body script');
+        function startup() {
+            loadWatch('startup()');
+            startCamera();
+            addControls();
+            showWelcome();
+            showCredits();
+        //    showOnboarding();
+            loadWatch('ready');
+        }
+
+        globals = {
+            scrollPaused: true,
+            muralsActive: false,
+            welcomeActive: false,
+            backButtonActive: false,
+            backButtonLookupAngle: 45
+        };
+
+        startCamera = function() {
+            var cam = document.querySelector('[camera]');
+            cam.setAttribute('rotation', '0 0 0.5');
+            cam.flushToDOM();
+        }
+
+        showOnboarding = function() {
+            var sceneEl = document.getElementById('scene');
+            //var entervr = document.getElementsByTagName('body')[0];
+            var onboardEl = document.createElement('div');
+            var obtext = '<div onclick="hideOnboarding();">';
+            obtext += '<p><span>This VR world</span> is compatible with Google Cardboard. If you are on a smartphone, close other apps for the best experience. </p>';
+            obtext += '<p>Enter an area by clicking on its preview. </p>';
+            obtext += '<p>Look up and click the Back button to exit to the Welcome screen. </p>';
+            obtext += '<p>Click on the Cardboard icon in the lower right to enter VR mode.</p> ';
+            obtext += '<p class="dismiss">DISMISS</p> ';
+            obtext += '</div> ';
+            onboardEl.innerHTML = obtext;
+            onboardEl.className = 'onboarding';
+            onboardEl.onclick = 'hideOnboarding();'
+            sceneEl.appendChild(onboardEl);
+            countdown();
+        }
+
+        countdown = function() {
+            var count = 10;
+            var counter = setInterval(timer, 1000); //1000 will  run it every 1 second
+            function timer() {
+                count = count - 1;
+                if (count <= 0) {
+                    clearInterval(counter);
+                    hideOnboarding();
+                    return;
+                }
+
+                document.getElementsByClassName('dismiss')[0].innerHTML = "DISMISS (" + count + ")";
+            }
+        }
+        hideOnboarding = function() {
+            console.log('hide onboarding');
+            var onboardEl = document.getElementsByClassName('onboarding')[0];
+            onboardEl.style.display = 'none';
+        }
+
+        showCredits = function() {
+            var entervr = document.getElementsByClassName('a-enter-vr')[0];
+            var creditsEl = document.createElement('div');
+            creditsEl.innerHTML = 'Created by <a target="_blank" href="http://fasility.com">Fasility.com</a> for <a target="_blank" href="http://www.hgd.com">Howie Green</a>';
+            creditsEl.className = 'vr-credits';
+            entervr.appendChild(creditsEl);
+        }
+
+        AFRAME.registerComponent('pitchmeter', {
+            schema: {
+            },
+            init: function (data) {
+            },
+            tick: function() {
+            //    console.log('tick!');
+                if (globals.muralsActive) {
+                    var rotation = document.querySelector('[camera]').getAttribute('rotation');
+                    var color = 'white';
+                    if (rotation.x < -32) {
+                        color = 'red';
+                    }
+                    document.querySelector('[cursor]').setAttribute('color', color );
+                }
+            }
+        });
+
+        function addControls() {
+            var cam = document.querySelector('[camera]');
+            cam.setAttribute('universal-controls');
+        }
+
+        function hideAll() {
+            document.getElementById('welcome').setAttribute('visible', false);
+            document.getElementById('objects').setAttribute('visible', false);
+            document.getElementById('starflow').setAttribute('visible', false);
+            document.getElementById('murals').setAttribute('visible', false);
+            document.getElementById('about').setAttribute('visible', false);
+        }
+
+        function showObjects() {
+            globals.welcomeActive = false;
+            hideAll();
+            switchObject();
+            switchToOrbit();
+            document.getElementById('objects').setAttribute('visible', true);
+        }
+
+        function showWelcome(){
+            globals.muralsActive = false;
+            globals.welcomeActive = true;
+            globals.scrollPaused = true;
+            hideAll();
+            resetCamera();
+            switchToUniversal();
+            document.getElementById('welcome').setAttribute('visible', true);
+        }
+
+        function showMurals() {
+            globals.welcomeActive = false;
+            globals.muralsActive = true;
+            hideAll();
+            switchToTwoway();
+            document.getElementById('murals').setAttribute('visible', true);
+        }
+
+        function showStarflow() {
+            globals.scrollPaused = false;
+            globals.welcomeActive = false;
+            hideAll();
+            document.getElementById('starflow').setAttribute('visible', true);
+        }
+
+        function showAbout() {
+            globals.scrollPaused = true;
+            globals.welcomeActive = false;
+            hideAll();
+            document.getElementById('about').setAttribute('visible', true);
+        }
+
+        function switchToLook() {
+            var cam = document.querySelector('[camera]');
+        }
+
+        function sceneTransition() {
+
+        }
+
+        function switchToUniversal() {
+            /* when we switch to universal, it's because we're going back to the welcome area.
+               in this mode,
+               - tap to move must not come on. we want to select, not explore.
+               - wasd control must not work. no free motion.
+            */
+            var cam = document.querySelector('[camera]');
+            cam.removeAttribute('orbit-controls');
+            cam.removeAttribute('kinematic-body');
+            cam.removeAttribute('twoway-controls');
+            cam.removeAttribute('universal-controls');
+            cam.setAttribute('universal-controls', {'enabled': 'true', 'movementControls': ''} );
+
+        }
+
+        function switchToTwoway() { // for murals
+            var cam = document.querySelector('[camera]');
+            cam.setAttribute('kinematic-body');
+//            cam.removeAttribute('orbit-controls');
+            cam.setAttribute('universal-controls', {'enabled': 'true', 'movementControls': 'twoway'} );
+
+        }
+
+        function switchToOrbit() {
+            var cam = document.querySelector('[camera]');
+            if (cam.getAttribute('universal-controls')) {
+                cam.setAttribute('universal-controls', {'enabled': 'false' , 'movementControls': ''} );
+            }
+            // cam.removeAttribute('orbit-controls');
+            cam.setAttribute('target', '#camTarget');
+            cam.setAttribute('distance', '2');
+            cam.removeAttribute('orbit-controls');
+            cam.setAttribute('orbit-controls', {'enabled': 'true'} );
+        }
+
+        var currentObject = 0;
+        function switchObject() {
+            var targets = ['celtics', 'harvard'];
+            var targetName = targets[currentObject];
+            document.getElementById('celtics').setAttribute('visible', false);
+            document.getElementById('harvard').setAttribute('visible', false);
+            currentObject++;
+            if (currentObject > targets.length-1) {
+                currentObject = 0;
+            }
+            document.getElementById(targetName).setAttribute('visible', true);
+        }
+
+        function resetCamera() {
+            var cam = document.querySelector('[camera]');
+            cam.setAttribute('position', '0 1.6 0');
+            cam.setAttribute('rotation', '10 0 0');
+            cam.flushToDOM();
+        }
+
+        function clickOnObject() {
+            var rotation = document.querySelector('[camera]').getAttribute('rotation');
+            if (rotation.x > globals.backButtonLookupAngle) {
+                document.getElementById("back-arrow").setAttribute('visible', false);
+                showWelcome();
+            } else {
+                switchObject();
+            }
+        }
+
+        function backButtonClick() {
+            showWelcome();
+            document.getElementById("back-arrow").setAttribute('visible', false);
+            globals.backButtonActive = false;
+            console.log('back button click.');
+        }
+
+
+        AFRAME.registerComponent('back-button', {
+            fire: function() {
+                // console.log('canvas click');
+                var cam = document.querySelector('[camera]');
+                var rotation = cam.getAttribute('rotation');
+                if (rotation !== null) {
+                    if (rotation.x > globals.backButtonLookupAngle) {
+                        console.log('upward looking click!');
+                        backButtonClick();
+                    }
+                }
+            },
+            init: function() {
+                this.el.sceneEl.addEventListener('touchend', this.fire);
+                this.el.sceneEl.addEventListener('mouseup', this.fire);
+            },
+            tick: function() {
+                if (!globals.welcomeActive) {
+                    var rotation = this.el.getAttribute('rotation');
+                    if (rotation !== null) {
+                        if (rotation.x > globals.backButtonLookupAngle) {
+                            if (!globals.backButtonActive) {
+                                document.getElementById("back-arrow").setAttribute('visible', true);
+                                globals.backButtonActive = true;
+                            }
+
+                        } else {
+                            if (globals.backButtonActive) {
+                                document.getElementById("back-arrow").setAttribute('visible', false);
+                                globals.backButtonActive = false;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        AFRAME.registerComponent('onward', {
+            init: function () {
+                var loaded = this.el.sceneEl.hasLoaded;
+                this.lastTickTime = new Date().getTime();
+            },
+            tick: function () {
+                var now = new Date().getTime();
+                var elapsed = now - this.lastTickTime;
+                // elapsed should be about 1/50 to 1/15 of a second (desktop vs. mobile)
+                // therefore : 1000 / 50 = 20, 1000 / 15 = 67
+                // we want to use it to determine how far forward to move the objects.
+                // if it's high, we should move them more.
+                // if it's low, we should move them less.
+                var movementConstant = .001; // 0.01;
+                var movementIncrement = movementConstant * elapsed;
+
+                this.lastTickTime = new Date().getTime();
+                if (!globals.scrollPaused) {
+                    var pX = this.el.getAttribute('position').x;
+                    var pY = this.el.getAttribute('position').y;
+                    var pZ = this.el.getAttribute('position').z;
+                    pZ += movementIncrement;
+                    if (pZ > 20) {
+                        this.el.setAttribute('position', randomXYZ() );
+                    } else {
+                        this.el.setAttribute('position', {x: pX, y: pY, z: pZ} );
+                    }
+                }
+            }
+        });
+
+        randomXYZ = function() {
+            var xSpan = 10;
+            var ySpan = 5;
+            var zSpan = 40;
+            var posX = Math.floor(Math.random() * xSpan) - (xSpan/2) ;
+            if (posX === 0) {posX = Math.floor(Math.random() * xSpan) - (xSpan/2)};
+            if (posX === 0) {posX = Math.floor(Math.random() * xSpan) - (xSpan/2)};
+            var posY = Math.floor(Math.random() * ySpan) + .5 ;
+            var posZ = Math.floor(Math.random() * zSpan) * -1;
+            var posObj = {x:posX, y:posY, z:posZ };
+            return posObj;
+        }
+
+        AFRAME.registerComponent('setupstars', {
+            init: function () {
+                console.log('loading data.');
+
+                var imageCount = imageDatabase.length - 50;
+                var scene = document.querySelector('a-scene');
+
+                for (i=0; i<imageCount; i++) {
+                    var elem = document.createElement('a-plane');
+                    var source = imageDatabase[i][1];
+                    //elem.setAttribute('src', source);
+                    //elem.setAttribute('src', "starflow/Dig%252BHorn%252BPlayers%252BDuo%252B650.jpg");
+
+                    elem.setAttribute('position', randomXYZ() );
+
+                    //document.querySelector('a-scene').appendChild(elem);
+                    document.getElementById('starflow').appendChild(elem);
+                    elem.addEventListener('loaded', function () {
+
+                    });
+
+                    elem.setAttribute('material', {side: 'double'} );
+                    //elem.setAttribute('color', 'blue' );
+                    elem.setAttribute('onward', "");
+                    elem.setAttribute('onclick', "clickOnPicture(this)");
+                    elem.setAttribute('src', source);
+
+                }
+            },
+            tick: function () {
+            }
+        });
+
+        function clickOnPicture(whichPicture) {
+            console.log('clickOnPicture:', whichPicture);
+            var src = whichPicture.getAttribute('src');
+            console.log(src);
+            var hrsrc = null;
+            var title = null;
+            for (s=0; s<imageDatabase.length; s++) {
+                var im = imageDatabase[s];
+                var imsrc = im[1];
+                if (imsrc === src) {
+                    hrsrc = im[2];
+                    title = im[0];
+                    break;
+                }
+            }
+            console.log(title);
+            console.log(hrsrc);
+            var ph = document.getElementById('picture-holder'); // document.querySelector('a-scene').appendChild(sphereEl);
+            var mp = document.getElementById('main-picture');
+            var pt = document.getElementById('picture-title');
+            mp.setAttribute('src', hrsrc);
+            //mp.setAttribute('src', "starflow/Dig%252BHorn%252BPlayers%252BDuo%252B650.jpg");
+            ph.emit('fadein');
+            globals.scrollPaused = true;
+            var setText = null;
+            setText = title;
+            pt.setAttribute('text','text:'+ setText + ';font:Gill Sans MT Bold');
+
+            ph.setAttribute('visible', true);
+
+        }
+
+        function clickMainPicture() {
+            globals.scrollPaused = false;
+            var ph = document.getElementById('picture-holder');
+            var mp = document.getElementById('main-picture');
+            var pt = document.getElementById('picture-title');
+
+            ph.emit('fadeout');
+            mp.setAttribute('src', null);
+            ph.setAttribute('visible', false);
+
+            var setText = "";
+            pt.setAttribute('text','text:'+ setText + ';font:Gill Sans MT Bold');
+        }
+
+        imageDatabase = [
+            [
+            "Bass Player daily doodle painting",
+            "http://3.bp.blogspot.com/-4ELTi2LKJ70/WByusq-jiyI/AAAAAAAAC7s/s0DW6H8zdUIm662T3GlfzvQZWmH_QYrTwCLcB/s125-p/Dig%2BBass%2BPlayer%2B650.jpg",
+            "http://3.bp.blogspot.com/-4ELTi2LKJ70/WByusq-jiyI/AAAAAAAAC7s/s0DW6H8zdUIm662T3GlfzvQZWmH_QYrTwCLcB/s1600/Dig%2BBass%2BPlayer%2B650.jpg"
+            ],
+        ];
+
+
+        AFRAME.registerComponent('draw-canvas-text-a', {
+            schema: {type: 'selector'},
+            init: function() {
+                var canvas = this.canvas = this.data;
+                var ctx = this.ctx = canvas.getContext('2d');
+                ctx.fillStyle = "rgba(0,0,0,0.2)";
+                ctx.fillRect(0,0, canvas.width, canvas.height-110); // position x, y
+                ctx.font = "bold 58px Gill Sans MT";
+                ctx.fillStyle = "white";
+                var text = '';
+                text = 'Welcome to HowieSpace,';
+                ctx.fillText(text, 50, 160); // position x, y
+                text = 'The art of Howie Green in VR.';
+                ctx.fillText(text, 50, 260); // position x, y
+                text = 'Click on a section to enter it.';
+                ctx.fillText(text, 50, 400); // position x, y
+                text = 'Each one is a bit different.';
+                ctx.fillText(text, 50, 500); // position x, y
+                text = 'Return to this room anytime,';
+                ctx.fillText(text, 50, 640); // position x, y
+                text = 'Just look up and click Back.';
+                ctx.fillText(text, 50, 740); // position x, y
+            },
+            draw: function () {
+            }
+        });
+
+        AFRAME.registerComponent('draw-canvas-text-b', {
+            schema: {type: 'selector'},
+            init: function() {
+                var canvas = this.canvas = this.data;
+                var ctx = this.ctx = canvas.getContext('2d');
+                ctx.fillStyle = "rgba(0,0,0,0.2)";
+                ctx.fillRect(0,0, canvas.width, canvas.height-110); // position x, y
+                ctx.font = "bold 58px Gill Sans MT";
+                ctx.fillStyle = "white";
+                var text = '';
+                text = 'PAINTINGS is a gallery.';
+                ctx.fillText(text, 50, 160); // position x, y
+                text = 'Click to see a painting up close.';
+                ctx.fillText(text, 50, 260); // position x, y
+                text = 'MURALS has 4 wall size paintings.';
+                ctx.fillText(text, 50, 400); // position x, y
+                text = 'Click to move around.';
+                ctx.fillText(text, 50, 500); // position x, y
+                text = '3D WORKS has 2 junction boxes.';
+                ctx.fillText(text, 50, 640); // position x, y
+                text = 'Look around and click to switch.';
+                ctx.fillText(text, 50, 740); // position x, y
+            },
+            draw: function () {
+            }
+        });
+
+        AFRAME.registerComponent('draw-canvas-text-c', {
+            schema: {type: 'selector'},
+            init: function() {
+                var canvas = this.canvas = this.data;
+                var ctx = this.ctx = canvas.getContext('2d');
+                ctx.fillStyle = "rgba(0,0,0,0.2)";
+                ctx.fillRect(0,0, canvas.width, canvas.height-110); // position x, y
+                ctx.font = "bold 52px Gill Sans MT";
+                ctx.fillStyle = "white";
+                var text = '';
+                text = 'Howie Green came to international';
+                ctx.fillText(text, 50, 160); // position x, y
+                text = 'attention with the publication of';
+                ctx.fillText(text, 50, 260); // position x, y
+                text = 'his first book "Jazz Fish Zen".';
+                ctx.fillText(text, 50, 360); // position x, y
+                text = 'His work has earned over 45 awards.';
+                ctx.fillText(text, 50, 460); // position x, y
+                text = 'Click these spheres to see Howie\'s';
+                ctx.fillText(text, 50, 600); // position x, y
+                text = 'paintings in 360 degree panorama.';
+                ctx.fillText(text, 50, 700); // position x, y
+            },
+            draw: function () {
+            }
+        });
+
+
+        AFRAME.registerComponent('startup', {
+            init: function() {
+                startup();
+            }
+        });
+
+    </script>
+
+
+    <a-scene id="scene" startup >
+
+        <a-entity position="0 2.29 0" rotation="0 0 0" scale="1 1 1" visible="true" light="type: ambient" color="#fff" ></a-entity>
+
+        <a-assets>
+            <!-- <audio id="music" src="music/echo-space.mp3" preload="auto"> -->
+
+            <!-- welcome -->
+            <img id="sky-color" src="textures/skies/dig-color-sky.jpg">
+            <img id="sky-peace" src="textures/skies/pop-art-peace-sign.jpg">
+            <img id="welcome-ui" src="ui/welcome.png">
+            <img id="welcome-about-bg" src="ui/welcome-about-bg.png">
+            <img id="cow-poker" src="textures/sprites/parade-cow-poker.png">
+            <img id="cow-sophie" src="textures/sprites/parade-cow-sophie.png">
+            <img id="welcome-murals" src="ui/welcome-murals.jpg">
+            <img id="welcome-3dworks" src="ui/welcome-3dworks.jpg">
+            <img id="welcome-paintings" src="ui/welcome-paintings.jpg">
+            <img id="welcome-about" src="ui/welcome-about.jpg">
+            <img id="howie-pic" src="textures/sprites/howie-pic.png">
+            <canvas width="1024" height="1024" id="info1" crossorigin="anonymous" webkit-playsinline=""></canvas>
+            <canvas width="1024" height="1024" id="info2" crossorigin="anonymous" webkit-playsinline=""></canvas>
+
+            <!-- objects -->
+            <img id="mambo-lineart" src="textures/skies/dig-mambo-lineart.jpg">
+            <img id="sig" src="ui/green-small.png">
+
+            <!-- celtics -->
+            <img id="celtics-front" src="textures/boxes/celtics-front.jpg">
+            <img id="celtics-left" src="textures/boxes/celtics-left.jpg">
+            <img id="celtics-right" src="textures/boxes/celtics-right.jpg">
+            <img id="celtics-back" src="textures/boxes/celtics-back.jpg">
+            <img id="celtics-top" src="textures/boxes/celtics-top.jpg">
+
+            <!-- harvard -->
+            <img id="harvard-front" src="textures/boxes/harvard-front.jpg">
+            <img id="harvard-left" src="textures/boxes/harvard-left.jpg">
+            <img id="harvard-right" src="textures/boxes/harvard-right.jpg">
+            <img id="harvard-back" src="textures/boxes/harvard-back.jpg">
+            <img id="harvard-top" src="textures/boxes/harvard-top.jpg">
+
+            <!-- murals -->
+            <img id="sky-bliss" src="textures/skies/bliss-equi.jpg">
+            <img id="stone-floor" src="textures/sprites/stone-floor.png">
+            <img id="mural-waltham" src="textures/murals/waltham.jpg">
+            <img id="mural-dimock" src="textures/murals/dimock.jpg">
+            <img id="mural-mellowbar" src="textures/murals/mellow-bar.jpg">
+            <img id="mural-ep" src="textures/murals/ep.jpg">
+
+            <!-- about -->
+            <canvas width="1024" height="1024" id="info-about" crossorigin="anonymous" webkit-playsinline=""></canvas>
+
+        </a-assets>
+
+        <!-- <a-entity id="sound" sound="src: #music; autoplay: true; loop: true"></a-entity> -->
+
+        <a-entity camera back-button pitchmeter
+            position="0 1.6 0">
+            <a-cursor id="cur" color="white" scale="1.4 1.4 0" position="0 0 -0.8"
+                fuse="false" opacity="0.6" cursor-feedback >
+            </a-cursor>
+            <a-plane id="back-arrow" visible="false"
+                src="ui/icon-back.png" shader="flat" material="transparent:true" position="0 0 -0.5" scale=".16 .16 .16" opacity="1"></a-plane>
+            <!--
+            <a-plane id="click-catcher" shader="flat" material="transparent:true"
+                position="0 0 -1" scale="0.2 0.2 0" color="black" opacity="0.01" onclick="hideClickCatcher();"></a-plane> -->
+
+        </a-entity>
+
+        <a-entity id="about">
+            <a-sky id="about-sky" color="#aaa" src="textures/equis/pop_art_deco_circles_light_1024x2048.jpg">
+            </a-sky>
+
+            <a-curvedimage radius="2" theta-start="135" theta-length="45"
+                position="-.05 1.43 0.0" rotation="0 -136 0"
+                material="shader: flat; src: #howie-pic; transparency: true; opacity: 0.99; side:double;"
+                opacity="0.95" height="1.4" scale="1.4 1.4 1.4"
+                scale="0.9 0.9 0" visible="">
+            </a-curvedimage>
+            <a-curvedimage radius="2" theta-start="90" theta-length="45"
+                position="-.05 1.43 0.0" rotation="0 -136 0"
+                material="shader: flat; src: #info-about; transparency: true; opacity: 0.99; side:double;"
+                opacity="0.95" height="1.4" scale="1.4 1.4 1.4"
+                draw-canvas-text-c="#info-about" scale="0.9 0.9 0" visible="">
+            </a-curvedimage>
+
+            <a-entity id="equi-spheres" scale="0.3 0.3 0.3" position="0 0.55 2.2"
+            >
+                <a-sphere src="textures/equis/brushstrokes_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/brushstrokes_1024x2048.jpg');"
+                    scale="1 1 1" position="-8 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/cosmic_bang_C_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/cosmic_bang_C_1024x2048.jpg');"
+                    scale="1 1 1" position="-6 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/cosmic_red_ribbon_4A_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/cosmic_red_ribbon_4A_1024x2048.jpg');"
+                    scale="1 1 1" position="-4 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/flowers_pink_715_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/flowers_pink_715_1024x2048.jpg');"
+                    scale="1 1 1" position="-2 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/peace_sign_lines_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/peace_sign_lines_1024x2048.jpg');"
+                    scale="1 1 1" position="0 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/pop_art_deco_circles_light_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/pop_art_deco_circles_light_1024x2048.jpg');"
+                    scale="1 1 1" position="2 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/pop_art_retro_216_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/pop_art_retro_216_1024x2048.jpg');"
+                    scale="1 1 1" position="4 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/pop_art_swirls_316_1_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/pop_art_swirls_316_1_1024x2048.jpg');"
+                    scale="1 1 1" position="6 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+                <a-sphere src="textures/equis/stars_1024x2048_sm.jpg"
+                    onclick="document.getElementById('about-sky').setAttribute('src', 'textures/equis/stars_1024x2048.jpg');"
+                    scale="1 1 1" position="8 0 0" opacity="1" material="repeat: 2 2" >
+                </a-sphere>
+
+
+            </a-entity>
+
+        </a-entity>
+
+
+        <a-entity id="welcome">
+
+            <a-sky color="#aaa" src="#sky-color">
+                <a-animation attribute="rotation"
+                dur="150000"
+                fill="forwards"
+                from="0 0 0"
+                to="360 360 0"
+                repeat="indefinite"
+                easing="linear"
+                ></a-animation>
+            </a-sky>
+
+            <a-curvedimage src="#welcome-ui" id="target"
+                height="1" radius="1" theta-length="180"
+                rotation="0 90 0" position="0 1.5 1"
+                scale="6 6 6">
+            </a-curvedimage>
+
+            <a-curvedimage src="#welcome-about-bg" id="welcome-about-bg"
+                height="1" radius="1" theta-length="45"
+                rotation="0 -20 0" position="0 0.86 .55"
+                scale="6 3.3 6">
+            </a-curvedimage>
+
+            <a-sphere src="#sky-peace"  scale="5 5 5" position="0 -4 0" opacity="0.5" material="repeat: 10 10" >
+                <a-animation attribute="rotation"
+                dur="300000"
+                fill="forwards"
+                from="0 0 90"
+                to="360 360 90"
+                repeat="indefinite"
+                easing="linear"
+                ></a-animation>
+            </a-sphere>
+
+            <a-curvedimage radius="2" theta-start="35" theta-length="45"
+                position="-.05 1.33 0.0" rotation="0 -136 0"
+                material="shader: flat; src: #info1; transparency: true; opacity: 0.99; side:double;"
+                opacity="0.95" height="1.4" scale="1 1 1"
+                draw-canvas-text-a="#info1" scale="0.9 0.9 0" visible="">
+            </a-curvedimage>
+
+            <a-curvedimage radius="2" theta-start="-170" theta-length="45"
+                position="-.05 1.33 0.0" rotation="0 -136 0"
+                material="shader: flat; src: #info2; transparency: true; opacity: 0.99; side:double;"
+                opacity="0.95" height="1.4" scale="1 1 1"
+                draw-canvas-text-b="#info2" scale="0.9 0.9 0" visible="">
+            </a-curvedimage>
+
+            <a-entity id="welcome-buttons"
+                scale="5.5 4 5.5" rotation="0 180 0" position="0 1.19 0.75">
+
+                <a-curvedimage id="button-paintings" src="#welcome-paintings" data-interactive="true" onclick="showStarflow();"
+
+                    height=".5" radius="1" theta-start="29" theta-length="36"
+                    rotation="0 0 0" position="0 0 0">
+
+                    <a-animation attribute="position" begin="lookat"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="-0.09 0 -0.05"></a-animation>
+                    <a-animation attribute="color" begin="lookat"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#999" to="#fff"></a-animation>
+
+                    <a-animation attribute="position" begin="lookaway"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="0 0 0"></a-animation>
+                    <a-animation attribute="color" begin="lookaway"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#fff" to="#999"></a-animation>
+
+                </a-curvedimage>
+
+                <a-curvedimage id="button-murals" src="#welcome-murals" data-interactive="true" onclick="showMurals();"
+
+                    height=".5" radius="1" theta-start="-18" theta-length="36"
+                    rotation="0 0 0" position="0 0 0">
+
+                    <a-animation attribute="position" begin="lookat"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="0 0 -0.1"></a-animation>
+                    <a-animation attribute="color" begin="lookat"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#999" to="#fff"></a-animation>
+
+                    <a-animation attribute="position" begin="lookaway"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="0 0 0"></a-animation>
+                    <a-animation attribute="color" begin="lookaway"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#fff" to="#999"></a-animation>
+
+                </a-curvedimage>
+
+                <a-curvedimage id="button-3dworks" src="#welcome-3dworks" data-interactive="true" onclick="showObjects();"
+
+                    height=".5" radius="1" theta-start="-65" theta-length="36"
+                    rotation="0 0 0" position="0 0 0" color="#999">
+
+                    <a-animation attribute="position" begin="lookat"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="0.08 0 -0.06"></a-animation>
+                    <a-animation attribute="color" begin="lookat"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#999" to="#fff"></a-animation>
+
+                    <a-animation attribute="position" begin="lookaway"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="0 0 0"></a-animation>
+                    <a-animation attribute="color" begin="lookaway"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#fff" to="#999"></a-animation>
+
+                </a-curvedimage>
+
+                <a-curvedimage id="button-about" src="#welcome-about" data-interactive="true" onclick="showAbout();"
+
+                    height=".5" radius="1" theta-start="165" theta-length="36"
+                    rotation="0 0 0" position="0 0 0" color="#999">
+
+                    <a-animation attribute="position" begin="lookat"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="0 0 0.2"></a-animation>
+                    <a-animation attribute="color" begin="lookat"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#999" to="#fff"></a-animation>
+
+                    <a-animation attribute="position" begin="lookaway"
+                        direction="normal" dur="600" repeat="0" fill="forwards"
+                        to="0 0 0"></a-animation>
+                    <a-animation attribute="color" begin="lookaway"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="#fff" to="#999"></a-animation>
+
+                </a-curvedimage>
+
+            </a-entity>
+
+            <a-plane id="sophie" src="#cow-sophie"
+                position="-1.59 1.25 2.4"
+                material="transparent: true"
+                rotation="0 166 0" scale="1.4 1.5 0"
+                onclick="window.speechSynthesis.speak(new SpeechSynthesisUtterance('Hi! I\'m Sophie.'))"
+                ></a-plane>
+
+            <a-plane id="poker" src="#cow-poker"
+                position="1.75 1.25 2.4"
+                material="transparent: true"
+                rotation="0 -162 0" scale="1.4 1.5 0"
+                onclick="window.speechSynthesis.speak(new SpeechSynthesisUtterance('Hey buddy. I\'m Poker Cow.'))"
+                ></a-plane>
+
+        </a-entity>
+
+
+        <a-entity id="objects" visible="false" scale=".8 .8 .8" >
+            <a-sky src="#mambo-lineart"></a-sky>
+            <a-entity id="camTarget" visible="false" position="0 0 0"></a-entity>
+
+            <a-entity id="celtics" visible="false" position="0 0 0" scale=".9 .9 .9" onclick="clickOnObject()">
+                <a-plane position="0 0 .5" scale="2 2 0" src="#celtics-front"></a-plane>
+                <a-plane position="-1 0 0" scale="1 2 0" rotation="0 -90 0" src="#celtics-left"></a-plane>
+                <a-plane position="1 0 0" scale="1 2 0" rotation="0 90 0" src="#celtics-right"></a-plane>
+                <a-plane position="0 0 -0.5" scale="2 2 0" rotation="0 180 0" src="#celtics-back"></a-plane>
+                <a-plane position="0 1 0" scale="1 2 0" rotation="-90 90 0" src="#celtics-top"></a-plane>
+                <a-plane position="0 -1 0" scale="1 2 0" rotation="90 90 0" color="#112211"></a-plane>
+                <a-entity id="copyright1" position="-0.56 -1.2 -0.15" scale=".12 .12 0" rotation="90 0 0"
+                        text="text:Copyright 2016 Howie Green;font:Gill Sans MT Bold"
+                        material="shader: flat; color:white; opacity: 0.2"></a-entity>
+                <a-entity id="copyright2" position="-0.8 -1.2 -0.28" scale=".12 .12 0" rotation="90 0 0"
+                        text="text:Copyright 2016 NBA Media Ventures, LLC;font:Gill Sans MT Bold"
+                        material="shader: flat; color:white; opacity: 0.2"></a-entity>
+                <a-plane id="signature" position="0.01 -1.28 0.14" scale=".5 .5 0" rotation="90 0 0"
+                        material="src:#sig; transparent:true"></a-plane>
+                <a-box depth="0.9" height="0.2" width="1.9" position="0 -1.07 -0.02"
+                    color="#334433" >
+                </a-box>
+                <a-plane id="backplane" position="0 -1.25 0.53" scale="2 .2 0" rotation="0 0 0"
+                    color="#000000" opacity="0.2"></a-plane>
+                <a-entity id="createdBy" position="-.82 -1.27 0.55" scale=".12 .12 0" rotation="0 0 0"
+                    text="text:Created by Fasility.com for Howie Green;font:Gill Sans MT Bold"
+                    material="shader: flat; color:white; opacity: 0.3"></a-entity>
+            </a-entity>
+
+            <a-entity id="harvard" visible="false" position="0 -0.3 0" scale=".7 .7 .7" onclick="clickOnObject();">
+                <a-plane position="0 .4 .5" scale="2 2.8 0"  src="#harvard-front"></a-plane>
+                <a-plane position="-1 .4 0" scale="1 2.8 0" rotation="0 -90 0" src="#harvard-left"></a-plane>
+                <a-plane position="1 .4 0" scale="1 2.8 0" rotation="0 90 0" src="#harvard-right"></a-plane>
+                <a-plane position="0 .4 -0.5" scale="2 2.8 0" rotation="0 180 0" src="#harvard-back"></a-plane>
+                <a-plane position="0 1.8 0" scale="1 2 0" rotation="-90 90 0" src="#harvard-top"></a-plane>
+                <a-plane position="0 -1 0" scale="1 0 0" rotation="90 90 0" color="#112211"></a-plane>
+                <a-entity id="copyright1" position="-0.56 -1.2 -0.15" scale=".12 .12 0" rotation="90 0 0"
+                        text="text:Copyright 2016 Howie Green;font:Gill Sans MT Bold"
+                        material="shader: flat; color:white; opacity: 0.2"></a-entity>
+                <a-plane id="signature" position="0.01 -1.28 0.14" scale=".5 .5 0" rotation="90 0 0"
+                        material="src:#sig; transparent:true"></a-plane>
+                <a-box depth="1.2" height="0.2" width="2.2" position="0 -1.07 -0.02"
+                    color="#676767" material="roughness: 1; metalness: 0" >
+                </a-box>
+                <a-plane id="backplane" position="0 -1.25 0.53" scale="2 .2 0" rotation="0 0 0"
+                    color="#000000" opacity="0.2"></a-plane>
+                <a-entity id="createdBy" position="-.82 -1.27 0.55" scale=".12 .12 0" rotation="0 0 0"
+                    text="text:Created by Fasility.com for Howie Green;font:Gill Sans MT Bold"
+                    material="shader: flat; color:white; opacity: 0.3"></a-entity>
+
+            </a-entity>
+
+        </a-entity>
+
+        <a-entity id="starflow" setupstars visible="false">
+
+            <a-sky color="#444" src="#sky-peace" material="repeat: 2 2"></a-sky>
+
+            <a-plane id="floor" width="100" height="100"
+                material="src:#stone-floor; repeat: 20 20; metalness: 0; roughness: 0.8 "
+                opacity="0.6" color="#bbbbbb" position="0 0 0" rotation="-90 0 0"></a-plane>
+
+            <a-entity id="picture-holder" position = "0 1.5 -1.5" scale="0.01 0.01 0" visible="false" >
+                <a-entity id="picture-title" position="-0.9 -1.10 0" scale=".15 .15 0" rotation="0 0 0"
+                    text="text:Test text;font:Gill Sans MT Bold"
+                    material="shader: flat; color:white; opacity: .8; antialias:true;"></a-entity>
+                <a-plane id="main-picture" scale=".6 .6 .6" material="side: double"
+                    onclick="clickMainPicture();"
+                    width="3" height="3" opacity="1" rotation="0 0 0"  >
+                </a-plane>
+
+                    <a-animation attribute="opacity" begin="fadein"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="0" to="1"></a-animation>
+                    <a-animation attribute="scale" begin="fadein"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="0.8 0.8 0.8" to="1 1 1"></a-animation>
+
+                    <a-animation attribute="opacity" begin="fadeout"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="1" to="0"></a-animation>
+                    <a-animation attribute="scale" begin="fadeout"
+                        direction="normal" dur="300" repeat="0" fill="forwards"
+                        from="1 1 1" to="0.8 0.8 0.8"></a-animation>
+
+            </a-entity>
+        </a-entity>
+
+        <a-entity id="murals" visible="false">
+
+            <a-sky src="#sky-bliss"></a-sky>
+
+            <a-plane width="100" height="100"
+                material="src:#stone-floor; repeat: 20 20; metalness: 0; roughness: 0.8 "
+                opacity="1" color="#bbbbbb" position="0 0 0" rotation="-90 0 0"></a-plane>
+
+            <a-entity id="mural-west" position="-30 2 0" rotation="0 90 -1">
+                <a-entity position="-15 7.6 0" scale="2 2 0"
+                    text="text:Rochester, NY;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-entity position="-15.23 4.43 0" scale="5 5 0"
+                    text="text:Epilepsy Pralid;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-plane position="0 0.5 0"
+                    src="#mural-ep" width="30" height="6" color="#ffffff" opacity="1"
+                    material="side:double;color:#ffffff">
+                </a-plane>
+            </a-entity>
+
+            <a-entity id="mural-north" position="0 2 -30">
+                <a-entity position="-19.8 7.6 0" scale="2 2 0"
+                    text="text:Boston, MA;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-entity position="-19.98 4.18 0" scale="5 5 0"
+                    text="text:Dimock Center;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-plane position="0 0.5 0"
+                    src="#mural-dimock" width="40" height="5" color="#ffffff" opacity="1"
+                    material="side:double;color:#ffffff">
+                </a-plane>
+            </a-entity>
+
+            <a-entity id="mural-south" position="0 1.5 30" rotation="0 180 0">
+                <a-entity position="-19.45 7.01 0" scale="2 2 0"
+                    text="text:Jacksonville, FL;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-entity position="-19.77 3.5 0" scale="5 5 0"
+                    text="text:Mellow Mushroom;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-plane position="0 0.5 0"
+                    src="#mural-mellowbar" width="40" height="4" color="#ffffff" opacity="1"
+                    material="side:double;color:#ffffff">
+                </a-plane>
+            </a-entity>
+
+            <a-entity id="mural-east" position="30 1.5 0" rotation="0 -90 0">
+                <a-entity position="-29.7 8.22 0" scale="2 2 0"
+                    text="text:Waltham, MA;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-entity position="-29.7 4.75 0" scale="5 5 0"
+                    text="text:Whittemore School;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-entity position="-29.7 3.26 0" scale="2 2 0"
+                    text="text:Painted by Boston Red Sox Foundation Volunteers - Nat. Grid;font:Gill Sans MT Bold"
+                    material="shader: flat; color:blue; opacity: 0.2"></a-entity>
+                <a-plane
+                    id="mural" src="#mural-waltham" position="0 0.5 0" width="60" height="4" color="#ffffff" opacity="1"
+                    material="side:double;color:#ffffff">
+                </a-plane>
+            </a-entity>
+
+        </a-entity>
+
+    </a-scene>
+
+    <script type="text/javascript">
+        loadWatch('body foot script');
+        window.onload = function() {
+            loadWatch('window.onload');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,248 @@
+{
+    "accessors": [
+        {
+            "bufferView": 2,
+            "byteOffset": 0,
+            "componentType": 5123,
+            "count": 1722,
+            "max": [
+                1151
+            ],
+            "min": [
+                0
+            ],
+            "name": "accessor_buffer_Sphere_0",
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 0,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 1152,
+            "max": [
+                2.544144630432129,
+                0.8966577053070068,
+                0.501853883266449
+            ],
+            "min": [
+                0.2809535562992096,
+                -0.26153287291526794,
+                -1.7613366842269897
+            ],
+            "name": "accessor_buffer_Sphere_POSITION_0",
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 1152,
+            "max": [
+                0.9951848387718201,
+                1.0,
+                0.9951848983764648
+            ],
+            "min": [
+                -0.9951847791671753,
+                -1.0,
+                -0.9951847791671753
+            ],
+            "name": "accessor_buffer_Sphere_NORMAL_0",
+            "type": "VEC3"
+        }
+    ],
+    "asset": {
+        "copyright": "",
+        "generator": "blendergltf v1.2.0",
+        "version": "2.0"
+    },
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 13824,
+            "byteOffset": 0,
+            "byteStride": 12,
+            "name": "bufferView_buffer_Sphere_POSITION_0",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 13824,
+            "byteOffset": 13824,
+            "byteStride": 12,
+            "name": "bufferView_buffer_Sphere_NORMAL_0",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 3448,
+            "byteOffset": 27648,
+            "name": "bufferView_buffer_Sphere_0",
+            "target": 34963
+        }
+    ],
+    "buffers": [
+        {
+            "byteLength": 31096,
+            "name": "buffer_rotunda",
+            "uri": "buffer_rotunda.bin"
+        }
+    ],
+    "cameras": [
+        {
+            "name": "Camera",
+            "perspective": {
+                "aspectRatio": 1.703595982340029,
+                "yfov": 0.5033799409866333,
+                "zfar": 100.0,
+                "znear": 0.10000000149011612
+            },
+            "type": "perspective"
+        }
+    ],
+    "images": [
+        {
+            "name": "brick-wall-decay-venice.jpg",
+            "uri": "https://cdn.glitch.com/924f1ea5-0b41-4868-8cec-508b7c3b47f6%2Fbrick-wall-decay-venice.jpg?1528771808076"
+        }
+    ],
+    "materials": [
+        {
+            "alphaMode": "OPAQUE",
+            "doubleSided": false,
+            "emissiveFactor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "name": "Material.001",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0.6400001049041748,
+                    0.04953848943114281,
+                    0.08354734629392624,
+                    1.0
+                ],
+                "metallicFactor": 0.0,
+                "metallicRoughnessTexture": {
+                    "index": 0,
+                    "texCoord": 0
+                },
+                "roughnessFactor": 1.0
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "Sphere",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 1
+                    },
+                    "indices": 0,
+                    "material": 0,
+                    "mode": 4
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "camera": 0,
+            "name": "Camera",
+            "rotation": [
+                -0.09062843769788742,
+                -0.8937962651252747,
+                -0.2099730223417282,
+                0.38578000664711
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "translation": [
+                -7.481131553649902,
+                5.34366512298584,
+                -6.5076398849487305
+            ]
+        },
+        {
+            "name": "Lamp",
+            "rotation": [
+                -0.34203386306762695,
+                -0.5232755541801453,
+                -0.2841663062572479,
+                0.7269423007965088
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                0.9999999403953552
+            ],
+            "translation": [
+                -4.076245307922363,
+                5.903861999511719,
+                1.0054539442062378
+            ]
+        },
+        {
+            "mesh": 0,
+            "name": "Sphere",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "translation": [
+                -0.005787849426269531,
+                0.023703575134277344,
+                0.04231452941894531
+            ]
+        }
+    ],
+    "samplers": [
+        {
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "name": "Texture",
+            "wrapS": 10497,
+            "wrapT": 10497
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "extras": {
+                "active_camera": 0,
+                "background_color": [
+                    0.05087608844041824,
+                    0.05087608844041824,
+                    0.05087608844041824
+                ],
+                "frames_per_second": 24
+            },
+            "name": "Scene",
+            "nodes": [
+                2,
+                1,
+                0
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "name": "Texture",
+            "sampler": 0,
+            "source": 0
+        }
+    ]
+}
